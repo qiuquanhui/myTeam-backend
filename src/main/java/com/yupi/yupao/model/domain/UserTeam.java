@@ -9,7 +9,7 @@ import java.util.Date;
 /**
  * 用户队伍关系实体
  *
- * @author <a href="https://github.com/liyupi">程序员鱼皮</a>
+ * @author <a href="https://github.com/liyupi"> </a>
  * @from <a href="https://yupi.icu">编程导航知识星球</a>
  */
 @TableName(value = "user_team")

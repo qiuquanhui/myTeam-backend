@@ -16,6 +16,7 @@ import com.yupi.yupao.model.request.TeamJoinRequest;
 import com.yupi.yupao.model.request.TeamQuitRequest;
 import com.yupi.yupao.model.request.TeamUpdateRequest;
 import com.yupi.yupao.model.vo.TeamUserVO;
+import com.yupi.yupao.model.vo.UserVO;
 import com.yupi.yupao.service.TeamService;
 import com.yupi.yupao.service.UserService;
 import com.yupi.yupao.service.UserTeamService;
@@ -76,15 +77,34 @@ public class TeamController {
     }
 
     @GetMapping("/get")
-    public BaseResponse<Team> getTeamById(long id) {
+    public BaseResponse<TeamUserVO> getTeamById(long id) {
         if (id <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
+        //根据队伍Id，查team
+        TeamQuery teamQuery = new TeamQuery();
+        teamQuery.setId(id);
         Team team = teamService.getById(id);
         if (team == null) {
             throw new BusinessException(ErrorCode.NULL_ERROR);
         }
-        return ResultUtils.success(team);
+        //防止查到多个队伍，直接拿到首个
+        TeamUserVO teamUserVo = new TeamUserVO();
+        BeanUtils.copyProperties(team,teamUserVo);
+        if (team == null) {
+            throw new BusinessException(ErrorCode.NULL_ERROR);
+        }
+        //根据队伍Id，查询user_team表，获取加入的用户
+        List<User> joinUser = teamService.listJoinUsers(team.getId());
+        teamUserVo.setJoinUsers(joinUser);
+        //设置创建人的userID
+        Long userId = team.getUserId();
+        User safetyUser = userService.getSafetyUser(userService.getById(userId));
+        UserVO userVO = new UserVO();
+        BeanUtils.copyProperties(safetyUser,userVO);
+        teamUserVo.setCreateUser(userVO);
+
+        return ResultUtils.success(teamUserVo);
     }
 
     @GetMapping("/list")
@@ -129,8 +149,23 @@ public class TeamController {
         Team team = new Team();
         BeanUtils.copyProperties(teamQuery, team);
         Page<Team> page = new Page<>(teamQuery.getPageNum(), teamQuery.getPageSize());
-        QueryWrapper<Team> queryWrapper = new QueryWrapper<>(team);
+        QueryWrapper<Team> queryWrapper = new QueryWrapper<>();
+        Integer status = teamQuery.getStatus();
+        if (status == null){
+            status = 0;
+        }
+        queryWrapper.eq("status",status);
         Page<Team> resultPage = teamService.page(page, queryWrapper);
+        //查询已经加入的人数
+//        List<Team> records = resultPage.getRecords();
+//        for (Team record: records){
+//            QueryWrapper<UserTeam> userTeamQueryWrapper = new QueryWrapper<>();
+//            Long teamId = record.getId();
+//            userTeamQueryWrapper.eq("teamId", teamId);
+//            //已加入队伍人数
+//            long hasJoinNum = userTeamService.count(userTeamQueryWrapper);
+//            record.setHasJoinNum(hasJoinNum);
+//        }
         return ResultUtils.success(resultPage);
     }
 

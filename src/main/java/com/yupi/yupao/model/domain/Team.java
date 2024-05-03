@@ -9,7 +9,7 @@ import java.util.Date;
 /**
  * 队伍实体
  *
- * @author <a href="https://github.com/liyupi">程序员鱼皮</a>
+ * @author <a href="https://github.com/liyupi"> </a>
  * @from <a href="https://yupi.icu">编程导航知识星球</a>
  */
 @TableName(value = "team")
@@ -30,6 +30,15 @@ public class Team implements Serializable {
      * 队伍头像
      */
     private String teamUrl;
+
+    /**
+     * 已加入队伍人数
+     */
+    private long hasJoinNum;
+    /**
+     * 是否已加入队伍
+     */
+    private boolean hasJoin = false;
 
     /**
      * 描述

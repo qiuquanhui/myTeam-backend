@@ -3,6 +3,7 @@ package com.yupi.yupao.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.yupi.yupao.model.domain.User;
 import com.yupi.yupao.model.request.UserRegisterRequest;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -10,7 +11,7 @@ import java.util.List;
 /**
  * 用户服务
  *
- * @author <a href="https://github.com/liyupi">程序员鱼皮</a>
+ * @author <a href="https://github.com/liyupi"> </a>
  * @from <a href="https://yupi.icu">编程导航知识星球</a>
  */
 public interface UserService extends IService<User> {
@@ -96,4 +97,14 @@ public interface UserService extends IService<User> {
     List<User> matchUsers(long pageSize, long pageNum, User loginUser);
 
     int updateTags(Long userId, User loginUser, List<String> tags);
+
+    /**
+     * 修改用户头像
+     *
+     * @param user
+     * @param loginUser
+     * @param file
+     * @return
+     */
+    int updateImg(User user, User loginUser, MultipartFile file);
 }

@@ -17,8 +17,10 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -29,7 +31,7 @@ import static com.yupi.yupao.constant.UserConstant.USER_LOGIN_STATE;
 /**
  * 用户接口
  *
- * @author <a href="https://github.com/liyupi">程序员鱼皮</a>
+ * @author <a href="https://github.com/liyupi"> </a>
  * @from <a href="https://yupi.icu">编程导航知识星球</a>
  */
 @RestController
@@ -118,6 +120,26 @@ public class UserController {
         User user = userService.getById(userId);
         User safetyUser = userService.getSafetyUser(user);
         return ResultUtils.success(safetyUser);
+    }
+
+    /**
+     * 修改用户头像
+     *
+     * @param user
+     * @return
+     */
+    @PostMapping("/updateImg")
+    public BaseResponse<Integer> updateImg(@RequestParam(value = "file") MultipartFile file, User user, HttpServletRequest request){
+        //校验参数是否为空
+        if (user == null){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        //校验权限（需要拿到当前用户的用户登录态）
+        User loginUser = userService.getLoginUser(request);
+        ServletContext servletContext = request.getServletContext();
+        //触发更新
+        int result = userService.updateImg(user, loginUser, file);
+        return ResultUtils.success(result);
     }
 
     @GetMapping("/search")

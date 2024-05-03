@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * 队伍服务
  *
- * @author <a href="https://github.com/liyupi">程序员鱼皮</a>
+ * @author <a href="https://github.com/liyupi"> </a>
  * @from <a href="https://yupi.icu">编程导航知识星球</a>
  */
 public interface TeamService extends IService<Team> {
@@ -73,4 +73,12 @@ public interface TeamService extends IService<Team> {
      * @return
      */
     boolean deleteTeam(long id, User loginUser);
+
+    /**
+     * 根据队伍id 获取所有加入队伍的用户信息
+     *
+     * @param id
+     * @return
+     */
+    List<User> listJoinUsers(Long id);
 }

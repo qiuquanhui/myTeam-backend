@@ -12,12 +12,14 @@ import com.yupi.yupao.model.domain.User;
 import com.yupi.yupao.model.request.UserRegisterRequest;
 import com.yupi.yupao.service.UserService;
 import com.yupi.yupao.utils.AlgorithmUtils;
+import com.yupi.yupao.utils.TencentCOSUtils;
 import javafx.util.Pair;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.DigestUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -31,7 +33,7 @@ import static com.yupi.yupao.constant.UserConstant.USER_LOGIN_STATE;
 /**
  * 用户服务实现类
  *
- * @author <a href="https://github.com/liyupi">程序员鱼皮</a>
+ * @author <a href="https://github.com/liyupi"> </a>
  * @from <a href="https://yupi.icu">编程导航知识星球</a>
  */
 @Service
@@ -358,6 +360,37 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         User user = new User();
         user.setId(userId);
         user.setTags(StrToJson);
+        //触发更新
+        return this.baseMapper.updateById(user);
+    }
+
+    @Override
+    public int updateImg(User user, User loginUser, MultipartFile file) {
+        //更新用户信息，先获取到用户的 id，判断 id < 0 就没有此用户
+        Long userId = user.getId();
+        if (userId < 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        //校验权限（需要获取到用户登录态）
+        //1.管理员可以更新任意信息
+        //2.用户只能更新自己的信息
+
+        //当前用户态的用户（已登录）不是管理员，并且修改的用户信息也不是已登录用户的（修改的不是自己的），就抛异常
+        if (!isAdmin(loginUser) && !Objects.equals(userId, loginUser.getId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH);
+        }
+        User oldUser = this.getById(user.getId());
+        //修改的用户不存在
+        if (oldUser == null) {
+            throw new BusinessException(ErrorCode.NULL_ERROR);
+        }
+        //n=0,图片存入用户图片的地址
+        int n = 0;
+        //上传图片并拿到对象地址
+        String newAvatarUrl = TencentCOSUtils.uploadFile(file, n);
+        //对象地址就是图片地址
+        user.setAvatarUrl(newAvatarUrl);
+
         //触发更新
         return this.baseMapper.updateById(user);
     }

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- @author <a href="https://github.com/liyupi">程序员鱼皮</a> -->
+<!-- @author <a href="https://github.com/liyupi"> </a> -->
 <!-- @from <a href="https://yupi.icu">编程导航知识星球</a> -->
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
@@ -7,20 +7,19 @@
 <mapper namespace="com.yupi.yupao.mapper.TeamMapper">
 
     <resultMap id="BaseResultMap" type="com.yupi.yupao.model.domain.Team">
-            <id property="id" column="id" jdbcType="BIGINT"/>
-            <result property="name" column="name" jdbcType="VARCHAR"/>
-            <result property="description" column="description" jdbcType="VARCHAR"/>
-            <result property="maxNum" column="maxNum" jdbcType="INTEGER"/>
-            <result property="expireTime" column="expireTime" jdbcType="TIMESTAMP"/>
-            <result property="userId" column="userId" jdbcType="BIGINT"/>
-            <result property="status" column="status" jdbcType="INTEGER"/>
-            <result property="password" column="password" jdbcType="VARCHAR"/>
-            <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
-            <result property="updateTime" column="updateTime" jdbcType="TIMESTAMP"/>
-            <result property="isDelete" column="isDelete" jdbcType="TINYINT"/>
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="description" column="description" jdbcType="VARCHAR"/>
+        <result property="maxNum" column="maxNum" jdbcType="INTEGER"/>
+        <result property="expireTime" column="expireTime" jdbcType="TIMESTAMP"/>
+        <result property="userId" column="userId" jdbcType="BIGINT"/>
+        <result property="status" column="status" jdbcType="INTEGER"/>
+        <result property="password" column="password" jdbcType="VARCHAR"/>
+        <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="updateTime" jdbcType="TIMESTAMP"/>
+        <result property="isDelete" column="isDelete" jdbcType="TINYINT"/>
     </resultMap>
 
-<!--  [编程导航学习圈](https://t.zsxq.com/0emozsIJh) 零基础快速入门编程，不走弯路！30+ 原创学习路线和专栏、1000+ 编程精华文章、500+ 编程学习指南、20T+ 编程资源汇总  -->
 
     <sql id="Base_Column_List">
         id,name,description,
@@ -28,4 +27,31 @@
         status,password,createTime,
         updateTime,isDelete
     </sql>
+
+
+    <select id="selectJoinUsers" resultType="com.yupi.yupao.model.domain.User">
+        select u.id,
+               username,
+               userAccount,
+               avatarUrl,
+               gender,
+               userPassword,
+               phone,
+               email,
+               userStatus,
+               tags,
+               profile,
+               u.createTime,
+               u.updateTime,
+               u.isDelete,
+               userRole,
+               planetCode
+        from team t
+                 left join user_team ut on t.id = ut.teamId
+                 left join user u on ut.userId = u.id
+        where teamId = #{id}
+          and t.isDelete = 0
+          and ut.isDelete = 0
+          and u.isDelete = 0
+    </select>
 </mapper>

@@ -1,14 +1,16 @@
 package com.yupi.yupao.model.vo;
 
+import com.yupi.yupao.model.domain.User;
 import lombok.Data;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 队伍和用户信息封装类（脱敏）
  *
- * @author <a href="https://github.com/liyupi">程序员鱼皮</a>
+ * @author <a href="https://github.com/liyupi"> </a>
  * @from <a href="https://yupi.icu">编程导航知识星球</a>
  */
 @Data
@@ -22,16 +24,26 @@ public class TeamUserVO implements Serializable {
     private Long id;
 
     /**
+     * 队伍头像
+     */
+    private String teamUrl;
+
+    /**
      * 队伍名称
      */
     private String name;
 
-    // 作_者 【程序员_鱼皮】 https://space.bilibili.com/12890453/
 
     /**
      * 描述
      */
     private String description;
+
+    /**
+     * 加入队伍的用户信息
+     */
+    private List<User> joinUsers;
+
 
     /**
      * 最大人数
