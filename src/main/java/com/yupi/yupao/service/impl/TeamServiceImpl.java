@@ -18,6 +18,7 @@ import com.yupi.yupao.model.vo.UserVO;
 import com.yupi.yupao.service.TeamService;
 import com.yupi.yupao.service.UserService;
 import com.yupi.yupao.service.UserTeamService;
+import com.yupi.yupao.utils.TencentCOSUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.redisson.api.RLock;
@@ -25,6 +26,7 @@ import org.redisson.api.RedissonClient;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
@@ -110,6 +112,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         // 8. 插入队伍信息到队伍表
         team.setId(null);
         team.setUserId(userId);
+        team.setHasJoinNum(1);
         boolean result = this.save(team);
         Long teamId = team.getId();
         if (!result || teamId == null) {
@@ -230,6 +233,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
     }
 
     @Override
+    @Transactional
     public boolean joinTeam(TeamJoinRequest teamJoinRequest, User loginUser) {
         if (teamJoinRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -279,6 +283,11 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
                     if (teamHasJoinNum >= team.getMaxNum()) {
                         throw new BusinessException(ErrorCode.PARAMS_ERROR, "队伍已满");
                     }
+                    // 修改队伍信息
+                    Team oldTeam = this.getById(teamId);
+                    long joinNum = oldTeam.getHasJoinNum();
+                    oldTeam.setHasJoinNum(joinNum + 1);
+                    this.updateById(oldTeam);
                     // 修改队伍信息
                     UserTeam userTeam = new UserTeam();
                     userTeam.setUserId(userId);
@@ -387,6 +396,27 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         return userList.stream().map(user -> userService.getSafetyUser(user)).collect(Collectors.toList());
     }
 
+
+    /**
+     * 修改队伍头像
+     *
+     * @param file
+     * @param teamId
+     * @return
+     */
+    @Override
+    public int updateTeamUrl(MultipartFile file, Long teamId) {
+        //n=1,图片存入队伍图片的地址
+        int n = 1;
+        //上传图片并拿到对象地址
+        String teamUrl = TencentCOSUtils.uploadFile(file, n);
+        //对象地址就是图片地址
+        Team team = new Team();
+        team.setId(teamId);
+        team.setTeamUrl(teamUrl);
+        //触发更新
+        return this.baseMapper.updateById(team);
+    }
     /**
      * 根据 id 获取队伍信息
      *

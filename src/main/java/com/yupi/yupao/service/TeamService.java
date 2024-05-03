@@ -8,6 +8,7 @@ import com.yupi.yupao.model.request.TeamJoinRequest;
 import com.yupi.yupao.model.request.TeamQuitRequest;
 import com.yupi.yupao.model.request.TeamUpdateRequest;
 import com.yupi.yupao.model.vo.TeamUserVO;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -63,7 +64,6 @@ public interface TeamService extends IService<Team> {
      */
     boolean quitTeam(TeamQuitRequest teamQuitRequest, User loginUser);
 
-    // [加入学习圈](https://t.zsxq.com/0emozsIJh) 从 0 到 1 项目实战，经验拉满！10+ 原创项目手把手教程、1000+ 项目经验笔记、7 日项目提升训练营、60+ 编程经验分享直播
 
     /**
      * 删除（解散）队伍
@@ -81,4 +81,13 @@ public interface TeamService extends IService<Team> {
      * @return
      */
     List<User> listJoinUsers(Long id);
+
+    /**
+     * 修改队伍头像
+     *
+     * @param file
+     * @param teamId
+     * @return
+     */
+    int updateTeamUrl(MultipartFile file, Long teamId);
 }

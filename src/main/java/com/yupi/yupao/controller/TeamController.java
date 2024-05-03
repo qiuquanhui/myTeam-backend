@@ -23,6 +23,7 @@ import com.yupi.yupao.service.UserTeamService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -189,12 +190,30 @@ public class TeamController {
         return ResultUtils.success(result);
     }
 
-    @PostMapping("/delete")
-    public BaseResponse<Boolean> deleteTeam(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
-        if (deleteRequest == null || deleteRequest.getId() <= 0) {
+    /**
+     * 修改队伍头像
+     *
+     * @param file
+     * @param teamId
+     * @return
+     */
+    @PostMapping("/updateTeamUrl")
+    public BaseResponse<Integer> updateTeamUrl(@RequestParam(value = "file") MultipartFile file, Long teamId){
+        //校验参数是否为空
+        if (teamId == null){
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        long id = deleteRequest.getId();
+        //触发更新
+        int result = teamService.updateTeamUrl(file, teamId);
+        return ResultUtils.success(result);
+    }
+
+    @PostMapping("/delete")
+    public BaseResponse<Boolean> deleteTeam(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
+        if (deleteRequest == null || deleteRequest.getTeamId() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        long id = deleteRequest.getTeamId();
         User loginUser = userService.getLoginUser(request);
         boolean result = teamService.deleteTeam(id, loginUser);
         if (!result) {
