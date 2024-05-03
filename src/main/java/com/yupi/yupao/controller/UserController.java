@@ -9,6 +9,7 @@ import com.yupi.yupao.exception.BusinessException;
 import com.yupi.yupao.model.domain.User;
 import com.yupi.yupao.model.request.UserLoginRequest;
 import com.yupi.yupao.model.request.UserRegisterRequest;
+import com.yupi.yupao.model.request.UserUpdateTagsRequest;
 import com.yupi.yupao.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -57,6 +58,31 @@ public class UserController {
         long result = userService.userRegister(userRegisterRequest);
         return ResultUtils.success(result);
     }
+
+    /**
+     * 用户标签
+     *
+     * @param userUpdateTagsRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/updateTags")
+    public BaseResponse<Integer> updateTags(@RequestBody UserUpdateTagsRequest userUpdateTagsRequest, HttpServletRequest request){
+        //校验参数是否为空
+        if (userUpdateTagsRequest == null){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        //修改者的id
+        Long userId = userUpdateTagsRequest.getId();
+        //修改者的标签
+        List<String> tags = userUpdateTagsRequest.getTags();
+        //校验权限（需要拿到当前用户的用户登录态）
+        User loginUser = userService.getLoginUser(request);
+        //触发更新
+        int result = userService.updateTags(userId, loginUser, tags);
+        return ResultUtils.success(result);
+    }
+
 
     @PostMapping("/login")
     public BaseResponse<User> userLogin(@RequestBody UserLoginRequest userLoginRequest, HttpServletRequest request) {

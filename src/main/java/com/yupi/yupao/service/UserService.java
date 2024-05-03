@@ -94,4 +94,6 @@ public interface UserService extends IService<User> {
      * @return
      */
     List<User> matchUsers(long pageSize, long pageNum, User loginUser);
+
+    int updateTags(Long userId, User loginUser, List<String> tags);
 }

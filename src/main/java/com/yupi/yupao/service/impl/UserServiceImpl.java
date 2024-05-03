@@ -95,11 +95,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         user.setPhone(phone);
         user.setGender(gender);
 
+        //todo 优化
+        String[] data = {"男"};
+        Gson gson = new Gson();
+        String json = gson.toJson(data); // 将数组转化为JSON格式的字符串
         if (gender == 0){
-            user.setTags("[男]");
+            user.setTags(json);
         }
         if (gender == 1){
-            user.setTags("[男]");
+            String[] lady = {"女"};
+            String Lady_json = gson.toJson(lady); // 将数组转化为JSON格式的字符串
+            user.setTags(Lady_json);
         }
         user.setEmail(email);
         boolean saveResult = this.save(user);
@@ -277,9 +283,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         queryWrapper.select("id", "tags");
         queryWrapper.isNotNull("tags");
         List<User> userList = this.list(queryWrapper);
-//        Page<User> userPage = new Page<>(pageNum, pageSize);
-//        Page<User> page = this.page(userPage, queryWrapper);
-//        List<User> userList = page.getRecords();
         String tags = loginUser.getTags();
         Gson gson = new Gson();
         List<String> tagList = gson.fromJson(tags, new TypeToken<List<String>>() {
@@ -336,6 +339,27 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 //        System.out.println("========================");
 //        finalUserList.forEach(System.out::println);
         return finalUserList;
+    }
+
+    @Override
+    public int updateTags(Long userId, User loginUser, List<String> tags) {
+        //更新用户信息，先获取到用户的 id，判断 id < 0 就没有此用户
+        if (userId < 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        //将拿到的标签列表转换成 Json格式
+        Gson gson = new Gson();
+        String StrToJson = gson.toJson(tags);
+        //拿到要修改的用户id，然后修改
+        //当前用户态的用户（已登录）不是管理员，并且修改的用户信息也不是已登录用户的（修改的不是自己的），就抛异常
+        if (!isAdmin(loginUser) && !Objects.equals(userId, loginUser.getId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH);
+        }
+        User user = new User();
+        user.setId(userId);
+        user.setTags(StrToJson);
+        //触发更新
+        return this.baseMapper.updateById(user);
     }
 
     /**
