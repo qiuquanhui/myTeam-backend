@@ -89,7 +89,6 @@ public class UserController {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
         long userId = currentUser.getId();
-        // TODO 校验用户是否合法
         User user = userService.getById(userId);
         User safetyUser = userService.getSafetyUser(user);
         return ResultUtils.success(safetyUser);
@@ -118,11 +117,9 @@ public class UserController {
         return ResultUtils.success(userList);
     }
 
-    // todo 推荐多个，未实现
     @GetMapping("/recommend")
     public BaseResponse<Page<User>> recommendUsers(long pageSize, long pageNum, HttpServletRequest request) {
-        User loginUser = userService.getLoginUser(request);
-        String redisKey = String.format("yupao:user:recommend:%s", loginUser.getId());
+        String redisKey = String.format("huilai:user:recommend");
         ValueOperations<String, Object> valueOperations = redisTemplate.opsForValue();
         // 如果有缓存，直接读缓存
         Page<User> userPage = (Page<User>) valueOperations.get(redisKey);
@@ -168,17 +165,18 @@ public class UserController {
     /**
      * 获取最匹配的用户
      *
-     * @param num
+     * @param pageSize
+     * @param pageNum
      * @param request
      * @return
      */
     @GetMapping("/match")
-    public BaseResponse<List<User>> matchUsers(long num, HttpServletRequest request) {
-        if (num <= 0 || num > 20) {
+    public BaseResponse<List<User>> matchUsers(long pageSize, long pageNum, HttpServletRequest request) {
+        if (pageSize <= 0 || pageSize > 20) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         User user = userService.getLoginUser(request);
-        return ResultUtils.success(userService.matchUsers(num, user));
+        return ResultUtils.success(userService.matchUsers(pageSize, pageNum, user));
     }
 
 }

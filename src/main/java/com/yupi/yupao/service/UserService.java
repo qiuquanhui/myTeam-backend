@@ -88,9 +88,10 @@ public interface UserService extends IService<User> {
 
     /**
      * 匹配用户
-     * @param num
+     * @param pageSize
+     * @param pageNum
      * @param loginUser
      * @return
      */
-    List<User> matchUsers(long num, User loginUser);
+    List<User> matchUsers(long pageSize, long pageNum, User loginUser);
 }

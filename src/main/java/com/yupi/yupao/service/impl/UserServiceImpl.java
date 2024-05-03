@@ -12,9 +12,9 @@ import com.yupi.yupao.model.domain.User;
 import com.yupi.yupao.model.request.UserRegisterRequest;
 import com.yupi.yupao.service.UserService;
 import com.yupi.yupao.utils.AlgorithmUtils;
+import javafx.util.Pair;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.math3.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.DigestUtils;
@@ -91,15 +91,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         user.setUserAccount(userAccount);
         user.setUserPassword(encryptPassword);
         user.setUsername(username);
+        user.setAvatarUrl("https://friend-1314004726.cos.ap-guangzhou.myqcloud.com/image%2Ffriend%2Fduolaameng.jpg");
         user.setPhone(phone);
         user.setGender(gender);
-        //设置性别标签
-//        ["男","大四"]
+
         if (gender == 0){
-            user.setTags("男");
+            user.setTags("[男]");
         }
         if (gender == 1){
-            user.setTags("女");
+            user.setTags("[男]");
         }
         user.setEmail(email);
         boolean saveResult = this.save(user);
@@ -115,10 +115,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (StringUtils.isAnyBlank(userAccount, userPassword)) {
             return null;
         }
-        if (userAccount.length() < 4) {
+        if (userAccount.length() < 3) {
             return null;
         }
-        if (userPassword.length() < 8) {
+        if (userPassword.length() < 6) {
             return null;
         }
         // 账户不能包含特殊字符
@@ -169,6 +169,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         safetyUser.setUserStatus(originUser.getUserStatus());
         safetyUser.setCreateTime(originUser.getCreateTime());
         safetyUser.setTags(originUser.getTags());
+        safetyUser.setProfile(originUser.getProfile());
         return safetyUser;
     }
 
@@ -271,11 +272,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
     @Override
-    public List<User> matchUsers(long num, User loginUser) {
+    public List<User> matchUsers(long pageSize, long pageNum, User loginUser) {
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         queryWrapper.select("id", "tags");
         queryWrapper.isNotNull("tags");
         List<User> userList = this.list(queryWrapper);
+//        Page<User> userPage = new Page<>(pageNum, pageSize);
+//        Page<User> page = this.page(userPage, queryWrapper);
+//        List<User> userList = page.getRecords();
         String tags = loginUser.getTags();
         Gson gson = new Gson();
         List<String> tagList = gson.fromJson(tags, new TypeToken<List<String>>() {
@@ -287,6 +291,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             User user = userList.get(i);
             String userTags = user.getTags();
             // 无标签或者为当前用户自己
+            // == 运算符不能排除掉自己和无标签的用户，用 equals
             if (StringUtils.isBlank(userTags) || user.getId() == loginUser.getId()) {
                 continue;
             }
@@ -297,25 +302,39 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             list.add(new Pair<>(user, distance));
         }
         // 按编辑距离由小到大排序
+        //topUserPairList 排序完的所有数据
         List<Pair<User, Long>> topUserPairList = list.stream()
                 .sorted((a, b) -> (int) (a.getValue() - b.getValue()))
-                .limit(num)
+                //.limit(pageSize)//10
                 .collect(Collectors.toList());
         // 原本顺序的 userId 列表
         List<Long> userIdList = topUserPairList.stream().map(pair -> pair.getKey().getId()).collect(Collectors.toList());
+        //将拿到的全部数据进行分页
+        int startIndex = (int)((pageNum - 1) * pageSize);
+        int endIndex = (int)(pageNum * pageSize);
+        List<Long> subList = userIdList.subList(startIndex, endIndex);
         QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
-        userQueryWrapper.in("id", userIdList);
+        userQueryWrapper.in("id", subList);
         // 1, 3, 2
         // User1、User2、User3
         // 1 => User1, 2 => User2, 3 => User3
+//        Map<Long, List<User>> userIdUserListMap = this.list(userQueryWrapper)
+//                .stream()
+//                .map(user -> getSafetyUser(user))
+//                .collect(Collectors.groupingBy(User::getId));
+
+        //上面进行了分页，这里拿到分页的用户id，直接从数据库中查对应的
+        //二次校验
         Map<Long, List<User>> userIdUserListMap = this.list(userQueryWrapper)
                 .stream()
                 .map(user -> getSafetyUser(user))
                 .collect(Collectors.groupingBy(User::getId));
         List<User> finalUserList = new ArrayList<>();
-        for (Long userId : userIdList) {
+        for (Long userId : subList) {
             finalUserList.add(userIdUserListMap.get(userId).get(0));
         }
+//        System.out.println("========================");
+//        finalUserList.forEach(System.out::println);
         return finalUserList;
     }
 
