@@ -10,8 +10,8 @@ import java.util.List;
 /**
  * 队伍和用户信息封装类（脱敏）
  *
- * @author <a href="https://github.com/liyupi"> </a>
- * @from <a href="https://yupi.icu">编程导航知识星球</a>
+ * 
+ * 
  */
 @Data
 public class TeamUserVO implements Serializable {

@@ -3,8 +3,8 @@ package com.yupi.yupao.common;
 /**
  * 返回工具类
  *
- * @author <a href="https://github.com/liyupi"> </a>
- * @from <a href="https://yupi.icu">编程导航知识星球</a>
+ * 
+ * 
  */
 public class ResultUtils {
 
