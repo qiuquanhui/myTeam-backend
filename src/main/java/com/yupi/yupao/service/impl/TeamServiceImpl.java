@@ -327,13 +327,16 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         if (count == 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "未加入队伍");
         }
-        long teamHasJoinNum = this.countTeamUserByTeamId(teamId);
+        long teamHasJoinNum = team.getHasJoinNum();
         // 队伍只剩一人，解散
         if (teamHasJoinNum == 1) {
             // 删除队伍
             this.removeById(teamId);
         } else {
             // 队伍还剩至少两人
+            //修改队伍人数
+            team.setHasJoinNum(teamHasJoinNum - 1);
+            this.updateById(team);
             // 是队长
             if (team.getUserId() == userId) {
                 // 把队伍转移给最早加入的用户
