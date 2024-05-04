@@ -179,6 +179,7 @@ public class TeamController {
         return ResultUtils.success(result);
     }
 
+    //退出队伍
     @PostMapping("/quit")
     public BaseResponse<Boolean> quitTeam(@RequestBody TeamQuitRequest teamQuitRequest, HttpServletRequest request) {
         if (teamQuitRequest == null) {

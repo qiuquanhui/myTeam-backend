@@ -370,8 +370,8 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         // 校验队伍是否存在
         Team team = getTeamById(id);
         long teamId = team.getId();
-        // 校验你是不是队伍的队长
-        if (team.getUserId() != loginUser.getId()) {
+        // 校验你是不是队伍的队长 或者管理员
+        if (team.getUserId() != loginUser.getId() || !userService.isAdmin(loginUser)) {
             throw new BusinessException(ErrorCode.NO_AUTH, "无访问权限");
         }
         // 移除所有加入队伍的关联信息
