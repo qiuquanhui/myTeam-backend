@@ -39,6 +39,13 @@ public interface TeamService extends IService<Team> {
     List<TeamUserVO> listTeams(TeamQuery teamQuery, boolean isAdmin);
 
     /**
+     * 获取我创建的队伍
+     *
+     * @return
+     */
+    List<TeamUserVO> listMyCreateTeams(long userId);
+
+    /**
      * 更新队伍
      *
      * @param teamUpdateRequest

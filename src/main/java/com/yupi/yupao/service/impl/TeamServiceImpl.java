@@ -207,6 +207,32 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
     }
 
     @Override
+    public List<TeamUserVO> listMyCreateTeams(long userId) {
+        QueryWrapper<Team> queryWrapper = new QueryWrapper<>();
+
+        if (userId > 0) {
+            queryWrapper.eq("userId", userId);
+        }
+        List<Team> teamList = this.list(queryWrapper);
+        List<TeamUserVO> teamUserVOList = new ArrayList<>();
+
+        // 关联查询创建人的用户信息
+        for (Team team : teamList) {
+            User user = userService.getById(userId);
+            TeamUserVO teamUserVO = new TeamUserVO();
+            BeanUtils.copyProperties(team, teamUserVO);
+            // 脱敏用户信息
+            if (user != null) {
+                UserVO userVO = new UserVO();
+                BeanUtils.copyProperties(user, userVO);
+                teamUserVO.setCreateUser(userVO);
+            }
+            teamUserVOList.add(teamUserVO);
+        }
+        return teamUserVOList;
+    }
+
+    @Override
     public boolean updateTeam(TeamUpdateRequest teamUpdateRequest, User loginUser) {
         if (teamUpdateRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -371,7 +397,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         Team team = getTeamById(id);
         long teamId = team.getId();
         // 校验你是不是队伍的队长 或者管理员
-        if (team.getUserId() != loginUser.getId() || !userService.isAdmin(loginUser)) {
+        if (team.getUserId() != loginUser.getId()) {
             throw new BusinessException(ErrorCode.NO_AUTH, "无访问权限");
         }
         // 移除所有加入队伍的关联信息
@@ -421,6 +447,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         //触发更新
         return this.baseMapper.updateById(team);
     }
+
     /**
      * 根据 id 获取队伍信息
      *

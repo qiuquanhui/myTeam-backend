@@ -230,8 +230,8 @@ public class TeamController {
      * @param request
      * @return
      */
-    @GetMapping("/list/my/create")
-    public BaseResponse<List<TeamUserVO>> listMyCreateTeams(TeamQuery teamQuery, HttpServletRequest request) {
+    @GetMapping("/list/my/create1")
+    public BaseResponse<List<TeamUserVO>> listMyCreateTeams1(TeamQuery teamQuery, HttpServletRequest request) {
         if (teamQuery == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -241,6 +241,18 @@ public class TeamController {
         return ResultUtils.success(teamList);
     }
 
+    /**
+     * 获取我创建的队伍
+     *
+     * @param request
+     * @return
+     */
+    @GetMapping("/list/my/create")
+    public BaseResponse<List<TeamUserVO>> listMyCreateTeams(HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        List<TeamUserVO> teamList = teamService.listMyCreateTeams(loginUser.getId());
+        return ResultUtils.success(teamList);
+    }
 
     /**
      * 获取我加入的队伍
@@ -271,7 +283,11 @@ public class TeamController {
         List<Long> idList = new ArrayList<>(listMap.keySet());
         teamQuery.setIdList(idList);
         List<TeamUserVO> teamList = teamService.listTeams(teamQuery, true);
-        return ResultUtils.success(teamList);
+        List<TeamUserVO> result = teamList.stream().map(teamUserVO -> {
+            teamUserVO.setHasJoin(true);
+            return teamUserVO;
+        }).collect(Collectors.toList());
+        return ResultUtils.success(result);
     }
 }
 
