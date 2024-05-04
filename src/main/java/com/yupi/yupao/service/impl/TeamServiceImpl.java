@@ -113,6 +113,8 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         team.setId(null);
         team.setUserId(userId);
         team.setHasJoinNum(1);
+        //设置队伍默认头像
+        team.setTeamUrl("https://friend-1314004726.cos.ap-guangzhou.myqcloud.com/image%2Ffriend%2Fduolaameng.jpg");
         boolean result = this.save(team);
         Long teamId = team.getId();
         if (!result || teamId == null) {

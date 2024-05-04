@@ -83,18 +83,12 @@ public class TeamController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         //根据队伍Id，查team
-        TeamQuery teamQuery = new TeamQuery();
-        teamQuery.setId(id);
         Team team = teamService.getById(id);
         if (team == null) {
             throw new BusinessException(ErrorCode.NULL_ERROR);
         }
-        //防止查到多个队伍，直接拿到首个
         TeamUserVO teamUserVo = new TeamUserVO();
         BeanUtils.copyProperties(team,teamUserVo);
-        if (team == null) {
-            throw new BusinessException(ErrorCode.NULL_ERROR);
-        }
         //根据队伍Id，查询user_team表，获取加入的用户
         List<User> joinUser = teamService.listJoinUsers(team.getId());
         teamUserVo.setJoinUsers(joinUser);

@@ -44,6 +44,10 @@ public class TeamUserVO implements Serializable {
      */
     private List<User> joinUsers;
 
+    /**
+     * 已加入队伍人数
+     */
+    private long hasJoinNum;
 
     /**
      * 最大人数
@@ -80,10 +84,6 @@ public class TeamUserVO implements Serializable {
      */
     private UserVO createUser;
 
-    /**
-     * 已加入的用户数
-     */
-    private Integer hasJoinNum;
 
     /**
      * 是否已加入队伍
