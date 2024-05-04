@@ -231,6 +231,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         }
         Team updateTeam = new Team();
         BeanUtils.copyProperties(teamUpdateRequest, updateTeam);
+        updateTeam.setHasJoinNum(oldTeam.getHasJoinNum());
         return this.updateById(updateTeam);
     }
 
@@ -413,8 +414,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         //上传图片并拿到对象地址
         String teamUrl = TencentCOSUtils.uploadFile(file, n);
         //对象地址就是图片地址
-        Team team = new Team();
-        team.setId(teamId);
+        Team team = baseMapper.selectById(teamId);
         team.setTeamUrl(teamUrl);
         //触发更新
         return this.baseMapper.updateById(team);
