@@ -95,6 +95,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         user.setUsername(username);
         user.setAvatarUrl("https://friend-1314004726.cos.ap-guangzhou.myqcloud.com/image%2Ffriend%2Fduolaameng.jpg");
         user.setPhone(phone);
+        user.setProfile("该用户很懒，什么也没留下");
         user.setGender(gender);
 
         //todo 优化
