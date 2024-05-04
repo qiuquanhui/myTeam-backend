@@ -137,7 +137,7 @@ public class TeamController {
     }
 
     @GetMapping("/list/page")
-    public BaseResponse<Page<Team>> listTeamsByPage(TeamQuery teamQuery) {
+    public BaseResponse<Page<Team>> listTeamsByPage(TeamQuery teamQuery,HttpServletRequest request) {
         if (teamQuery == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -151,16 +151,21 @@ public class TeamController {
         }
         queryWrapper.eq("status",status);
         Page<Team> resultPage = teamService.page(page, queryWrapper);
+        //查看当前用户是否加入队伍
+        List<Team> records = resultPage.getRecords();
+        //获取当前用户id
+        User loginUser = userService.getLoginUser(request);
+        Long userId = loginUser.getId();
+        for (Team record: records){
+            QueryWrapper<UserTeam> userTeamQueryWrapper = new QueryWrapper<>();
+            userTeamQueryWrapper.eq("teamId", record.getId());
+            userTeamQueryWrapper.eq("userId", userId);
+            List<UserTeam> list = userTeamService.list(userTeamQueryWrapper);
+            if (list.size() != 0){
+                record.setHasJoin(true);
+            }
+        }
         //查询已经加入的人数
-//        List<Team> records = resultPage.getRecords();
-//        for (Team record: records){
-//            QueryWrapper<UserTeam> userTeamQueryWrapper = new QueryWrapper<>();
-//            Long teamId = record.getId();
-//            userTeamQueryWrapper.eq("teamId", teamId);
-//            //已加入队伍人数
-//            long hasJoinNum = userTeamService.count(userTeamQueryWrapper);
-//            record.setHasJoinNum(hasJoinNum);
-//        }
         return ResultUtils.success(resultPage);
     }
 

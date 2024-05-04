@@ -282,15 +282,14 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
                         throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户已加入该队伍");
                     }
                     // 已加入队伍的人数
-                    long teamHasJoinNum = this.countTeamUserByTeamId(teamId);
+                    long teamHasJoinNum = team.getHasJoinNum();
                     if (teamHasJoinNum >= team.getMaxNum()) {
                         throw new BusinessException(ErrorCode.PARAMS_ERROR, "队伍已满");
                     }
                     // 修改队伍信息
-                    Team oldTeam = this.getById(teamId);
-                    long joinNum = oldTeam.getHasJoinNum();
-                    oldTeam.setHasJoinNum(joinNum + 1);
-                    this.updateById(oldTeam);
+                    long joinNum = team.getHasJoinNum();
+                    team.setHasJoinNum(joinNum + 1);
+                    this.updateById(team);
                     // 修改队伍信息
                     UserTeam userTeam = new UserTeam();
                     userTeam.setUserId(userId);
