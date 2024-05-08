@@ -2,6 +2,7 @@ package com.yupi.yupao.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.google.gson.Gson;
 import com.yupi.yupao.common.ErrorCode;
 import com.yupi.yupao.exception.BusinessException;
 import com.yupi.yupao.mapper.TeamMapper;
@@ -29,10 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -57,7 +55,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public long addTeam(Team team, User loginUser) {
+    public long addTeam(Team team, User loginUser,List<String> tags) {
         // 1. 请求参数是否为空？
         if (team == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -109,7 +107,13 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         if (hasTeamNum >= 5) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户最多创建 5 个队伍");
         }
-        // 8. 插入队伍信息到队伍表
+        // 8. 插入队伍信息到队伍表,以及标签
+        if (tags!=null){
+            //将拿到的标签列表转换成 Json格式
+            Gson gson = new Gson();
+            String StrToJson = gson.toJson(tags);
+            team.setTags(StrToJson);
+        }
         team.setId(null);
         team.setUserId(userId);
         team.setHasJoinNum(1);
@@ -425,6 +429,25 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         }
         List<User> userList = baseMapper.selectJoinUsers(id);
         return userList.stream().map(user -> userService.getSafetyUser(user)).collect(Collectors.toList());
+    }
+
+    @Override
+    public int teamUpdateTags(Long teamId, User loginUser, List<String> tags) {
+        //，判断 id < 0 就没有此队伍
+        if (teamId < 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        //将拿到的标签列表转换成 Json格式
+        Gson gson = new Gson();
+        String StrToJson = gson.toJson(tags);
+        //不是管理员或者不是队长就不可以修改
+        Team team = baseMapper.selectById(teamId);
+        if (!userService.isAdmin(loginUser) && team.getUserId() != loginUser.getId()){
+            throw new BusinessException(ErrorCode.NO_AUTH);
+        }
+        team.setTags(StrToJson);
+        //触发更新
+        return this.baseMapper.updateById(team);
     }
 
 

@@ -29,6 +29,11 @@ public class TeamUserVO implements Serializable {
     private String teamUrl;
 
     /**
+     * 标签列表 json
+     */
+    private String tags;
+
+    /**
      * 队伍名称
      */
     private String name;

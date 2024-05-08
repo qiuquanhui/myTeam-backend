@@ -59,8 +59,9 @@ public class TeamController {
         }
         User loginUser = userService.getLoginUser(request);
         Team team = new Team();
+        List<String> tags = teamAddRequest.getTags();
         BeanUtils.copyProperties(teamAddRequest, team);
-        long teamId = teamService.addTeam(team, loginUser);
+        long teamId = teamService.addTeam(team, loginUser,tags);
         return ResultUtils.success(teamId);
     }
 
@@ -208,6 +209,29 @@ public class TeamController {
         return ResultUtils.success(result);
     }
 
+    /**
+     * 用户标签
+     *
+     * @param teamUpdateRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/updateTags")
+    public BaseResponse<Integer> updateTags(@RequestBody TeamUpdateRequest teamUpdateRequest, HttpServletRequest request){
+        //校验参数是否为空
+        if (teamUpdateRequest == null){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        //队伍的id
+        Long teamId = teamUpdateRequest.getId();
+        //修改者的标签
+        List<String> tags = teamUpdateRequest.getTags();
+        //校验权限（需要拿到当前用户的用户登录态）
+        User loginUser = userService.getLoginUser(request);
+        //触发更新
+        int result = teamService.teamUpdateTags(teamId, loginUser, tags);
+        return ResultUtils.success(result);
+    }
     @PostMapping("/delete")
     public BaseResponse<Boolean> deleteTeam(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
         if (deleteRequest == null || deleteRequest.getTeamId() <= 0) {

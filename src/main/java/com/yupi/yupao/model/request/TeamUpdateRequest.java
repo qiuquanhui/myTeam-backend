@@ -4,6 +4,7 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 队伍更新请求体
@@ -45,4 +46,9 @@ public class TeamUpdateRequest implements Serializable {
      * 密码
      */
     private String password;
+
+    /**
+     * 标签
+     */
+    private List<String> tags;
 }

@@ -31,21 +31,21 @@
 
     <select id="selectJoinUsers" resultType="com.yupi.yupao.model.domain.User">
         select u.id,
-               username,
-               userAccount,
-               avatarUrl,
-               gender,
-               userPassword,
-               phone,
-               email,
-               userStatus,
-               tags,
-               profile,
+               u.username,
+               u.userAccount,
+               u.avatarUrl,
+               u.gender,
+               u.userPassword,
+               u.phone,
+               u.email,
+               u.userStatus,
+               u.tags,
+               u.profile,
                u.createTime,
                u.updateTime,
                u.isDelete,
-               userRole,
-               planetCode
+               u.userRole,
+               u.planetCode
         from team t
                  left join user_team ut on t.id = ut.teamId
                  left join user u on ut.userId = u.id

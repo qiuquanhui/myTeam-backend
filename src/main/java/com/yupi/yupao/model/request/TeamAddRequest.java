@@ -4,12 +4,11 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 创建队伍请求体
  *
- * 
- * 
  */
 @Data
 public class TeamAddRequest implements Serializable {
@@ -25,6 +24,11 @@ public class TeamAddRequest implements Serializable {
      * 描述
      */
     private String description;
+
+    /**
+     *队伍标签
+    */
+    private List<String> tags;
 
     /**
      * 最大人数
@@ -46,7 +50,6 @@ public class TeamAddRequest implements Serializable {
      */
     private Integer status;
 
-    // [加入星球](https://www.code-nav.cn/) 从 0 到 1 项目实战，经验拉满！10+ 原创项目手把手教程、7 日项目提升训练营、60+ 编程经验分享直播、1000+ 项目经验笔记
 
     /**
      * 密码

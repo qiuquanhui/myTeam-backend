@@ -27,7 +27,7 @@ public interface TeamService extends IService<Team> {
      * @param loginUser
      * @return
      */
-    long addTeam(Team team, User loginUser);
+    long addTeam(Team team, User loginUser,List<String> tags);
 
     /**
      * 搜索队伍
@@ -88,6 +88,8 @@ public interface TeamService extends IService<Team> {
      * @return
      */
     List<User> listJoinUsers(Long id);
+
+    int teamUpdateTags(Long teamId, User loginUser, List<String> tags);
 
     /**
      * 修改队伍头像
