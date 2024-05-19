@@ -3,12 +3,9 @@ package com.yupi.yupao.common;
 /**
  * 错误码
  *
- * 
- * 
  */
 public enum ErrorCode {
 
-    // https://yupi.icu/
 
     SUCCESS(0, "ok", ""),
     PARAMS_ERROR(40000, "请求参数错误", ""),
