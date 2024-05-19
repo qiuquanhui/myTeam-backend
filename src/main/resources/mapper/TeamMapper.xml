@@ -44,8 +44,7 @@
                u.createTime,
                u.updateTime,
                u.isDelete,
-               u.userRole,
-               u.planetCode
+               u.userRole
         from team t
                  left join user_team ut on t.id = ut.teamId
                  left join user u on ut.userId = u.id
