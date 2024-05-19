@@ -32,9 +32,6 @@ import static com.hui.myteam.constant.UserConstant.USER_LOGIN_STATE;
 
 /**
  * 用户服务实现类
- *
- * 
- * 
  */
 @Service
 @Slf4j
@@ -281,67 +278,38 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Override
     public List<User> matchUsers(long pageSize, long pageNum, User loginUser) {
-        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-        queryWrapper.select("id", "tags");
-        queryWrapper.isNotNull("tags");
-        List<User> userList = this.list(queryWrapper);
-        String tags = loginUser.getTags();
-        Gson gson = new Gson();
-        List<String> tagList = gson.fromJson(tags, new TypeToken<List<String>>() {
-        }.getType());
-        // 用户列表的下标 => 相似度
-        List<Pair<User, Long>> list = new ArrayList<>();
-        // 依次计算所有用户和当前用户的相似度
-        for (int i = 0; i < userList.size(); i++) {
-            User user = userList.get(i);
-            String userTags = user.getTags();
-            // 无标签或者为当前用户自己
-            // == 运算符不能排除掉自己和无标签的用户，用 equals
-            if (StringUtils.isBlank(userTags) || user.getId() == loginUser.getId()) {
-                continue;
-            }
-            List<String> userTagList = gson.fromJson(userTags, new TypeToken<List<String>>() {
-            }.getType());
-            // 计算分数
-            long distance = AlgorithmUtils.minDistance(tagList, userTagList);
-            list.add(new Pair<>(user, distance));
-        }
-        // 按编辑距离由小到大排序
-        //topUserPairList 排序完的所有数据
-        List<Pair<User, Long>> topUserPairList = list.stream()
-                .sorted((a, b) -> (int) (a.getValue() - b.getValue()))
-                //.limit(pageSize)//10
-                .collect(Collectors.toList());
-        // 原本顺序的 userId 列表
-        List<Long> userIdList = topUserPairList.stream().map(pair -> pair.getKey().getId()).collect(Collectors.toList());
-        //将拿到的全部数据进行分页
-        int startIndex = (int)((pageNum - 1) * pageSize);
-        int endIndex = (int)(pageNum * pageSize);
-        List<Long> subList = userIdList.subList(startIndex, endIndex);
-        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
-        userQueryWrapper.in("id", subList);
-        // 1, 3, 2
-        // User1、User2、User3
-        // 1 => User1, 2 => User2, 3 => User3
-//        Map<Long, List<User>> userIdUserListMap = this.list(userQueryWrapper)
-//                .stream()
-//                .map(user -> getSafetyUser(user))
-//                .collect(Collectors.groupingBy(User::getId));
+        // 查询所有有标签的用户，并直接计算相似度
+        QueryWrapper<User> queryWrapper = new QueryWrapper<User>()
+                .select("id", "tags")
+                .isNotNull("tags");
 
-        //上面进行了分页，这里拿到分页的用户id，直接从数据库中查对应的
-        //二次校验
-        Map<Long, List<User>> userIdUserListMap = this.list(userQueryWrapper)
-                .stream()
-                .map(user -> getSafetyUser(user))
-                .collect(Collectors.groupingBy(User::getId));
-        List<User> finalUserList = new ArrayList<>();
-        for (Long userId : subList) {
-            finalUserList.add(userIdUserListMap.get(userId).get(0));
-        }
-//        System.out.println("========================");
-//        finalUserList.forEach(System.out::println);
-        return finalUserList;
+        List<User> userList = this.list(queryWrapper);
+        String loginTags = loginUser.getTags();
+        List<String> loginTagList = new Gson().fromJson(loginTags, new TypeToken<List<String>>() {
+        }.getType());
+
+        // 计算并排序相似度
+        List<Pair<User, Long>> sortedPairs = userList.stream()
+                .filter(user -> !StringUtils.isBlank(user.getTags()) && user.getId() != loginUser.getId())
+                .map(user -> {
+                    List<String> userTagList = new Gson().fromJson(user.getTags(), new TypeToken<List<String>>() {
+                    }.getType());
+                    long distance = AlgorithmUtils.minDistance(loginTagList, userTagList);
+                    return new Pair<>(user, distance);
+                })
+                .sorted(Comparator.comparingLong(Pair::getValue))
+                .collect(Collectors.toList());
+
+        // 分页
+        int startIndex = (int) ((pageNum - 1) * pageSize);
+        int endIndex = (int) (pageNum * pageSize);
+        List<User> subList = sortedPairs.subList(startIndex, endIndex).stream()
+                .map(Pair::getKey)
+                .collect(Collectors.toList());
+
+        return subList;
     }
+
 
     @Override
     public int updateTags(Long userId, User loginUser, List<String> tags) {
@@ -394,7 +362,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         //触发更新
         return this.baseMapper.updateById(user);
     }
-
     /**
      * 根据标签搜索用户（SQL 查询版）
      *
