@@ -29,7 +29,6 @@ public class ResultUtils {
         return new BaseResponse<>(errorCode);
     }
 
-    // 作者 [ ](https://yupi.icu/)
 
     /**
      * 失败
