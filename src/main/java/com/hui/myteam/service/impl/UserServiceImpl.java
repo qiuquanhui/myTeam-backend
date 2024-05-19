@@ -280,7 +280,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     public List<User> matchUsers(long pageSize, long pageNum, User loginUser) {
         // 查询所有有标签的用户，并直接计算相似度
         QueryWrapper<User> queryWrapper = new QueryWrapper<User>()
-                .select("id", "tags")
                 .isNotNull("tags");
 
         List<User> userList = this.list(queryWrapper);
