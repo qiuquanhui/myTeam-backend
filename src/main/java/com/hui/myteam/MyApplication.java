@@ -12,7 +12,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * 
  */
 @SpringBootApplication
-@MapperScan("com.yupi.yupao.mapper")
+@MapperScan("com.hui.myteam.mapper")
 @EnableScheduling
 public class MyApplication {
 
