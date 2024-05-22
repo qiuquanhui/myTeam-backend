@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Configuration;
  * 
  */
 @Configuration
-@MapperScan("com.yupi.yupao.mapper")
+@MapperScan("com.hui.myteam.mapper")
 public class MybatisPlusConfig {
 
     /**
@@ -26,7 +26,5 @@ public class MybatisPlusConfig {
         interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));
         return interceptor;
     }
-
-    // [加入编程导航](https://yupi.icu) 深耕编程提升【两年半】、国内净值【最高】的编程社群、用心服务【20000+】求学者、帮你自学编程【不走弯路】
 
 }
