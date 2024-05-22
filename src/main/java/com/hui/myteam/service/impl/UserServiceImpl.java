@@ -44,7 +44,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     /**
      * 盐值，混淆密码
      */
-    private static final String SALT = "yupi";
+    private static final String SALT = "huilai";
 
     @Override
     public long userRegister(UserRegisterRequest userRegisterRequest) {
@@ -302,6 +302,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         // 分页
         int startIndex = (int) ((pageNum - 1) * pageSize);
         int endIndex = (int) (pageNum * pageSize);
+        if (endIndex > sortedPairs.size()){
+            endIndex = sortedPairs.size();
+        }
         List<User> subList = sortedPairs.subList(startIndex, endIndex).stream()
                 .map(Pair::getKey)
                 .collect(Collectors.toList());
