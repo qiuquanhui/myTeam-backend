@@ -8,8 +8,6 @@ import java.util.Date;
 /**
  * 队伍更新请求体
  *
- * 
- * 
  */
 @Data
 public class TeamUpdateRequest implements Serializable {

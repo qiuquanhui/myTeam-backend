@@ -6,8 +6,6 @@ import com.hui.myteam.model.domain.UserTeam;
 /**
  * 用户队伍 Mapper
  *
- * 
- * 
  */
 public interface UserTeamMapper extends BaseMapper<UserTeam> {
 

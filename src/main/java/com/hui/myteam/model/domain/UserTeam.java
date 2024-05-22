@@ -9,8 +9,6 @@ import java.util.Date;
 /**
  * 用户队伍关系实体
  *
- * 
- * 
  */
 @TableName(value = "user_team")
 @Data

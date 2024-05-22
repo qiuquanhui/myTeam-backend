@@ -10,8 +10,6 @@ import java.util.List;
 /**
  * 队伍和用户信息封装类（脱敏）
  *
- * 
- * 
  */
 @Data
 public class TeamUserVO implements Serializable {

@@ -3,8 +3,6 @@ package com.hui.myteam.model.enums;
 /**
  * 队伍状态枚举
  *
- * 
- * 
  */
 public enum TeamStatusEnum {
 

@@ -8,8 +8,6 @@ import java.util.Date;
 /**
  * 用户包装类（脱敏）
  *
- * 
- * 
  */
 @Data
 public class UserVO implements Serializable {

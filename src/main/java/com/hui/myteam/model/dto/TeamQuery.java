@@ -10,8 +10,6 @@ import java.util.List;
 /**
  * 队伍查询封装类
  *
- * 
- * 
  */
 @EqualsAndHashCode(callSuper = true)
 @Data

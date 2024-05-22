@@ -8,7 +8,6 @@ import java.util.List;
 /**
  * 用户修改标签请求体
  *
- * @author Alonso
  */
 @Data
 public class UserUpdateTagsRequest implements Serializable {
