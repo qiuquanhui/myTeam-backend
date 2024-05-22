@@ -15,8 +15,6 @@ import java.util.List;
 /**
  * 队伍服务
  *
- * 
- * 
  */
 public interface TeamService extends IService<Team> {
 
