@@ -1,8 +1,8 @@
 # 伙伴匹配后端
 
-[项目笔记](https://www.yuque.com/guangjun-0q7tw/sy4yod/br9vz8rb4xhttlop)
+[万字-----项目笔记](https://www.yuque.com/guangjun-0q7tw/sy4yod/br9vz8rb4xhttlop)
 
-[演示视频](https://www.bilibili.com/video/BV1Bm421W7YE/)
+[项目介绍------演示视频](https://www.bilibili.com/video/BV1Bm421W7YE/)
 
 # 项目介绍
 基于 SpringBoot + Vue3 的移动端网站，实现用户信息管理，搜索标签，队伍管理，匹配伙伴，组队等功能。
