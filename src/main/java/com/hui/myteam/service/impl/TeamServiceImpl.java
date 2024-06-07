@@ -30,13 +30,15 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
  * 队伍服务实现类
- *
  */
 @Service
 public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
@@ -53,7 +55,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public long addTeam(Team team, User loginUser,List<String> tags) {
+    public long addTeam(Team team, User loginUser, List<String> tags) {
         // 1. 请求参数是否为空？
         if (team == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -98,40 +100,58 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "超时时间 > 当前时间");
         }
         // 7. 校验用户最多创建 5 个队伍
-        // todo 有 bug，可能同时创建 100 个队伍
-        QueryWrapper<Team> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("userId", userId);
-        long hasTeamNum = this.count(queryWrapper);
-        if (hasTeamNum >= 5) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户最多创建 5 个队伍");
+        //使用 Redisson 分布式锁来防止并发情况的问题，解决可能同时创建 100 个队伍
+        RLock lock = redissonClient.getLock("huilai:add-team");
+        try {
+            //抢到锁并执行
+            while (true) {
+                if (lock.tryLock(0, -1, TimeUnit.MILLISECONDS)) {
+                    QueryWrapper<Team> queryWrapper = new QueryWrapper<>();
+                    queryWrapper.eq("userId", userId);
+                    long hasTeamNum = this.count(queryWrapper);
+                    if (hasTeamNum >= 5) {
+                        throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户最多创建 5 个队伍");
+                    }
+                    // 8. 插入队伍信息到队伍表,以及标签
+                    if (tags != null) {
+                        //将拿到的标签列表转换成 Json格式
+                        Gson gson = new Gson();
+                        String StrToJson = gson.toJson(tags);
+                        team.setTags(StrToJson);
+                    }
+                    team.setId(null);
+                    team.setUserId(userId);
+                    team.setHasJoinNum(1);
+                    //设置队伍默认头像
+                    team.setTeamUrl("https://friend-1314004726.cos.ap-guangzhou.myqcloud.com/image%2Ffriend%2Fduolaameng.jpg");
+                    boolean result = this.save(team);
+                    Long teamId = team.getId();
+                    if (!result || teamId == null) {
+                        throw new BusinessException(ErrorCode.PARAMS_ERROR, "创建队伍失败");
+                    }
+                    // 9. 插入用户  => 队伍关系到关系表
+                    UserTeam userTeam = new UserTeam();
+                    userTeam.setUserId(userId);
+                    userTeam.setTeamId(teamId);
+                    userTeam.setJoinTime(new Date());
+                    result = userTeamService.save(userTeam);
+                    if (!result) {
+                        throw new BusinessException(ErrorCode.PARAMS_ERROR, "创建队伍失败");
+                    }
+                    return teamId;
+                }
+            }
+
+        } catch (InterruptedException interruptedException) {
+            log.error("加入队伍中 redis 分布式锁获取锁失败 ", interruptedException);
+            return -1;
+        } finally {
+            // 只能释放自己的锁
+            if (lock.isHeldByCurrentThread()) {
+                System.out.println("unLock: " + Thread.currentThread().getId());
+                lock.unlock();
+            }
         }
-        // 8. 插入队伍信息到队伍表,以及标签
-        if (tags!=null){
-            //将拿到的标签列表转换成 Json格式
-            Gson gson = new Gson();
-            String StrToJson = gson.toJson(tags);
-            team.setTags(StrToJson);
-        }
-        team.setId(null);
-        team.setUserId(userId);
-        team.setHasJoinNum(1);
-        //设置队伍默认头像
-        team.setTeamUrl("https://friend-1314004726.cos.ap-guangzhou.myqcloud.com/image%2Ffriend%2Fduolaameng.jpg");
-        boolean result = this.save(team);
-        Long teamId = team.getId();
-        if (!result || teamId == null) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "创建队伍失败");
-        }
-        // 9. 插入用户  => 队伍关系到关系表
-        UserTeam userTeam = new UserTeam();
-        userTeam.setUserId(userId);
-        userTeam.setTeamId(teamId);
-        userTeam.setJoinTime(new Date());
-        result = userTeamService.save(userTeam);
-        if (!result) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "创建队伍失败");
-        }
-        return teamId;
     }
 
     @Override
@@ -248,7 +268,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
             throw new BusinessException(ErrorCode.NULL_ERROR, "队伍不存在");
         }
         // 只有管理员或者队伍的创建者可以修改
-        if (oldTeam.getUserId() != loginUser.getId() && !userService.isAdmin(loginUser)) {
+        if (oldTeam.getUserId() == loginUser.getId() || userService.isAdmin(loginUser)) {
             throw new BusinessException(ErrorCode.NO_AUTH);
         }
         TeamStatusEnum statusEnum = TeamStatusEnum.getEnumByValue(teamUpdateRequest.getStatus());
@@ -289,7 +309,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         // 该用户已加入的队伍数量
         long userId = loginUser.getId();
         // 只有一个线程能获取到锁
-        RLock lock = redissonClient.getLock("huilai:join_team");
+        RLock lock = redissonClient.getLock("huilai:join-team");
         try {
             // 抢到锁并执行
             while (true) {
@@ -440,7 +460,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         String StrToJson = gson.toJson(tags);
         //不是管理员或者不是队长就不可以修改
         Team team = baseMapper.selectById(teamId);
-        if (!userService.isAdmin(loginUser) && team.getUserId() != loginUser.getId()){
+        if (!userService.isAdmin(loginUser) && team.getUserId() != loginUser.getId()) {
             throw new BusinessException(ErrorCode.NO_AUTH);
         }
         team.setTags(StrToJson);
@@ -498,7 +518,3 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         return userTeamService.count(userTeamQueryWrapper);
     }
 }
-
-
-
-
