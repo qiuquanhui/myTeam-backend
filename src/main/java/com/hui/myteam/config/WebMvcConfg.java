@@ -19,7 +19,7 @@ public class WebMvcConfg implements WebMvcConfigurer {
         registry.addMapping("/**")
                 // 设置允许跨域请求的域名
                 .allowedOriginPatterns("*")
-                // 是否允许证书，由于设置了允许所有源，这里不再开启
+                // 是否允许证书，允许
                 .allowCredentials(true)
                 // 设置允许的方法
                 .allowedMethods("*")
