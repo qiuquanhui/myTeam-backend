@@ -70,11 +70,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         String validPattern = "[`~!@#$%^&*()+=|{}':;',\\\\[\\\\].<>/?~！@#￥%……&*（）——+|{}【】‘；：”“’。，、？]";
         Matcher matcher = Pattern.compile(validPattern).matcher(userAccount);
         if (matcher.find()) {
-            return -1;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "账户不能包含特殊字符");
         }
         // 密码和校验密码相同
         if (!userPassword.equals(checkPassword)) {
-            return -1;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码和校验密码不相同");
         }
         // 账户不能重复
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
@@ -94,14 +94,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         user.setPhone(phone);
         user.setProfile("该用户很懒，什么也没留下");
         user.setGender(gender);
-
+        //设置标签
         String[] data = {"男"};
         Gson gson = new Gson();
-        String json = gson.toJson(data); // 将数组转化为JSON格式的字符串
-        if (gender == 0){
-            user.setTags(json);
+        String man_json = gson.toJson(data); // 将数组转化为JSON格式的字符串
+        if (gender == 0) {
+            user.setTags(man_json);
         }
-        if (gender == 1){
+        if (gender == 1) {
             String[] lady = {"女"};
             String Lady_json = gson.toJson(lady); // 将数组转化为JSON格式的字符串
             user.setTags(Lady_json);
@@ -109,7 +109,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         user.setEmail(email);
         boolean saveResult = this.save(user);
         if (!saveResult) {
-            return -1;
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "注册失败");
         }
         return user.getId();
     }
@@ -227,6 +227,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         // todo 补充校验，如果用户没有传任何要更新的值，就直接报错，不用执行 update 语句
+        if (user == null){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"没有转递参数");
+        }
         // 如果是管理员，允许更新任意用户
         // 如果不是管理员，只允许更新当前（自己的）信息
         if (!isAdmin(loginUser) && userId != loginUser.getId()) {
@@ -288,6 +291,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }.getType());
 
         // 计算并排序相似度
+        // 计算当前用户与所有用户的标签匹配度，并按照匹配度进行排序，获取的一个 pair 键值对列表。
         List<Pair<User, Long>> sortedPairs = userList.stream()
                 .filter(user -> !StringUtils.isBlank(user.getTags()) && user.getId() != loginUser.getId())
                 .map(user -> {
@@ -302,14 +306,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         // 分页
         int startIndex = (int) ((pageNum - 1) * pageSize);
         int endIndex = (int) (pageNum * pageSize);
-        if (endIndex > sortedPairs.size()){
+        if (endIndex > sortedPairs.size()) {
             endIndex = sortedPairs.size();
         }
+        //将键值对列表进行分页，并获取用户列表。
         List<User> subList = sortedPairs.subList(startIndex, endIndex).stream()
                 .map(Pair::getKey)
                 .collect(Collectors.toList());
 
-        return subList;
+        //脱敏
+        List<User> result = subList.stream().map(this::getSafetyUser).collect(Collectors.toList());
+
+        return result;
     }
 
 
@@ -318,6 +326,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         //更新用户信息，先获取到用户的 id，判断 id < 0 就没有此用户
         if (userId < 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        //校验tags是否为空
+        if (CollectionUtils.isEmpty(tags)){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"标签数组为空");
         }
         //将拿到的标签列表转换成 Json格式
         Gson gson = new Gson();
@@ -364,6 +376,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         //触发更新
         return this.baseMapper.updateById(user);
     }
+
     /**
      * 根据标签搜索用户（SQL 查询版）
      *
