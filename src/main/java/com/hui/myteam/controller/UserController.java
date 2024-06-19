@@ -11,6 +11,7 @@ import com.hui.myteam.model.request.UserLoginRequest;
 import com.hui.myteam.model.request.UserRegisterRequest;
 import com.hui.myteam.model.request.UserUpdateTagsRequest;
 import com.hui.myteam.service.UserService;
+import com.hui.myteam.service.impl.userStatusStrategy.AdminStatusImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -41,6 +42,9 @@ public class UserController {
 
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
+
+    @Resource
+    private AdminStatusImpl adminStatusImpl;
 
     @PostMapping("/register")
     public BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
@@ -213,6 +217,20 @@ public class UserController {
         }
         User user = userService.getLoginUser(request);
         return ResultUtils.success(userService.matchUsers(pageSize, pageNum, user));
+    }
+
+    /**
+     * 修改用户状态位 -- 使用策略模式
+     *
+     * @return
+     */
+    @PutMapping("/adminStatus")
+    public BaseResponse<Boolean> adminStatus(Long id) {
+        if (id <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        Boolean result = adminStatusImpl.updateUserStatus(id);
+        return ResultUtils.success(result);
     }
 
 }
