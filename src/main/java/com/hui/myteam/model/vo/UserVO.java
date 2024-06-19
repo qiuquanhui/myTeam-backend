@@ -1,6 +1,7 @@
 package com.hui.myteam.model.vo;
 
 import lombok.Data;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -10,6 +11,7 @@ import java.util.Date;
  *
  */
 @Data
+@ToString
 public class UserVO implements Serializable {
     /**
      * id
@@ -50,6 +52,11 @@ public class UserVO implements Serializable {
      * 标签列表 json
      */
     private String tags;
+
+    /**
+     * 距离
+     */
+    private Double distance;
 
     /**
      * 状态 0 - 正常

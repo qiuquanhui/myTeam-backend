@@ -25,4 +25,15 @@ public interface UserConstant {
      */
     int ADMIN_ROLE = 1;
 
+    /**
+     * 管理员权限
+     */
+    String REDIS_GEO_KEY = "user:key:geo";
+
+
+    /**
+     * 管理员权限
+     */
+    String REDIS_USER_KEY = "user:key:recommend";
+
 }

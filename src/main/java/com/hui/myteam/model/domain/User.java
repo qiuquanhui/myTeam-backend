@@ -89,6 +89,24 @@ public class User implements Serializable {
      */
     private Integer userRole;
 
+
+    /**
+     * 经度
+     */
+    private Double longitude;
+
+
+    /**
+     * 纬度
+     */
+    private Double latitude;
+
+    /**
+     * 距离
+     */
+    @TableField(exist = false)
+    private Double distance;
+
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 }

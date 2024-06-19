@@ -3,6 +3,7 @@ package com.hui.myteam.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.hui.myteam.model.domain.User;
 import com.hui.myteam.model.request.UserRegisterRequest;
+import com.hui.myteam.model.vo.UserVO;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
@@ -105,4 +106,6 @@ public interface UserService extends IService<User> {
      * @return
      */
     int updateImg(User user, User loginUser, MultipartFile file);
+
+    List<UserVO> searchNearUser(Integer radius, HttpServletRequest request);
 }

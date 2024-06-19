@@ -10,12 +10,20 @@ import com.hui.myteam.exception.BusinessException;
 import com.hui.myteam.mapper.UserMapper;
 import com.hui.myteam.model.domain.User;
 import com.hui.myteam.model.request.UserRegisterRequest;
+import com.hui.myteam.model.vo.UserVO;
 import com.hui.myteam.service.UserService;
 import com.hui.myteam.utils.AlgorithmUtils;
 import com.hui.myteam.utils.TencentCOSUtils;
 import javafx.util.Pair;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.GeoResult;
+import org.springframework.data.geo.GeoResults;
+import org.springframework.data.redis.connection.RedisGeoCommands;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.DigestUtils;
@@ -40,6 +48,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Resource
     private UserMapper userMapper;
+
+    @Resource
+    private RedisTemplate<String,String> stringRedisTemplate;
 
     /**
      * 盐值，混淆密码
@@ -375,6 +386,43 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
         //触发更新
         return this.baseMapper.updateById(user);
+    }
+
+    @Override
+    public List<UserVO> searchNearUser(Integer radius, HttpServletRequest request) {
+
+        User loginUser = getLoginUser(request);
+
+        if (loginUser == null){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+
+        //创建距离
+        Distance distance = new Distance(radius, RedisGeoCommands.DistanceUnit.KILOMETERS);
+
+        //创建参数
+        RedisGeoCommands.GeoRadiusCommandArgs geoRadiusCommandArgs = RedisGeoCommands.GeoRadiusCommandArgs.newGeoRadiusArgs().includeCoordinates().includeDistance().sort(Sort.Direction.ASC);
+
+        //进行计算
+        GeoResults<RedisGeoCommands.GeoLocation<String>> geoResults = stringRedisTemplate.opsForGeo().radius(UserConstant.REDIS_GEO_KEY,
+                String.valueOf(loginUser.getId()), distance, geoRadiusCommandArgs);
+
+        //遍历数据
+        List<GeoResult<RedisGeoCommands.GeoLocation<String>>> content = geoResults.getContent();
+
+        List<UserVO> userVos = new ArrayList<>(content.size());
+
+        for (GeoResult<RedisGeoCommands.GeoLocation<String>> result : content) {
+            RedisGeoCommands.GeoLocation<String> location = result.getContent();
+            String id = location.getName();
+            User user = getById(Long.valueOf(id));
+            UserVO userVO = new UserVO();
+            BeanUtils.copyProperties(user, userVO);
+            userVO.setDistance(result.getDistance().getValue());
+            userVos.add(userVO);
+        }
+
+        return userVos;
     }
 
     /**

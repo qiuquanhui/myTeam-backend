@@ -10,6 +10,7 @@ import com.hui.myteam.model.domain.User;
 import com.hui.myteam.model.request.UserLoginRequest;
 import com.hui.myteam.model.request.UserRegisterRequest;
 import com.hui.myteam.model.request.UserUpdateTagsRequest;
+import com.hui.myteam.model.vo.UserVO;
 import com.hui.myteam.service.UserService;
 import com.hui.myteam.service.impl.userStatusStrategy.AdminStatusImpl;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +31,6 @@ import static com.hui.myteam.constant.UserConstant.USER_LOGIN_STATE;
 
 /**
  * 用户接口
- *
  */
 @RestController
 @RequestMapping("/user")
@@ -42,6 +42,9 @@ public class UserController {
 
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
+
+    @Resource
+    private RedisTemplate<String, String> stringRedisTemplate;
 
     @Resource
     private AdminStatusImpl adminStatusImpl;
@@ -69,9 +72,9 @@ public class UserController {
      * @return
      */
     @PostMapping("/updateTags")
-    public BaseResponse<Integer> updateTags(@RequestBody UserUpdateTagsRequest userUpdateTagsRequest, HttpServletRequest request){
+    public BaseResponse<Integer> updateTags(@RequestBody UserUpdateTagsRequest userUpdateTagsRequest, HttpServletRequest request) {
         //校验参数是否为空
-        if (userUpdateTagsRequest == null){
+        if (userUpdateTagsRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         //修改者的id
@@ -126,9 +129,9 @@ public class UserController {
      * @return
      */
     @PostMapping("/updateImg")
-    public BaseResponse<Integer> updateImg(@RequestParam(value = "file") MultipartFile file, User user, HttpServletRequest request){
+    public BaseResponse<Integer> updateImg(@RequestParam(value = "file") MultipartFile file, User user, HttpServletRequest request) {
         //校验参数是否为空
-        if (user == null){
+        if (user == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         //校验权限（需要拿到当前用户的用户登录态）
@@ -158,6 +161,12 @@ public class UserController {
         return ResultUtils.success(userList);
     }
 
+    /**
+     * @param pageSize
+     * @param pageNum
+     * @param request
+     * @return
+     */
     @GetMapping("/recommend")
     public BaseResponse<Page<User>> recommendUsers(long pageSize, long pageNum, HttpServletRequest request) {
         String redisKey = String.format("huilai:usewtecommend:%s",1L); //与缓存预热对应上
@@ -177,6 +186,15 @@ public class UserController {
             log.error("redis set key error", e);
         }
         return ResultUtils.success(userPage);
+    }
+
+    @GetMapping("/searchNearUser")
+    public BaseResponse<List<UserVO>> searchNearUser(Integer radius, HttpServletRequest request){
+        if (radius == null ){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+
+        return ResultUtils.success(userService.searchNearUser(radius, request));
     }
 
 
