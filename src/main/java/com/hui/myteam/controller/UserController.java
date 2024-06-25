@@ -12,7 +12,6 @@ import com.hui.myteam.model.request.UserRegisterRequest;
 import com.hui.myteam.model.request.UserUpdateTagsRequest;
 import com.hui.myteam.model.vo.UserVO;
 import com.hui.myteam.service.UserService;
-import com.hui.myteam.service.impl.userStatusStrategy.AdminStatusImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -45,9 +44,6 @@ public class UserController {
 
     @Resource
     private RedisTemplate<String, String> stringRedisTemplate;
-
-    @Resource
-    private AdminStatusImpl adminStatusImpl;
 
     @PostMapping("/register")
     public BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
@@ -169,7 +165,7 @@ public class UserController {
      */
     @GetMapping("/recommend")
     public BaseResponse<Page<User>> recommendUsers(long pageSize, long pageNum, HttpServletRequest request) {
-        String redisKey = String.format("huilai:usewtecommend:%s",1L); //与缓存预热对应上
+        String redisKey = String.format("huilai:usewtecommend:%s", 1L); //与缓存预热对应上
         ValueOperations<String, Object> valueOperations = redisTemplate.opsForValue();
         // 如果有缓存，直接读缓存
         Page<User> userPage = (Page<User>) valueOperations.get(redisKey);
@@ -189,8 +185,8 @@ public class UserController {
     }
 
     @GetMapping("/searchNearUser")
-    public BaseResponse<List<UserVO>> searchNearUser(Integer radius, HttpServletRequest request){
-        if (radius == null ){
+    public BaseResponse<List<UserVO>> searchNearUser(Integer radius, HttpServletRequest request) {
+        if (radius == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
 
@@ -243,11 +239,12 @@ public class UserController {
      * @return
      */
     @PutMapping("/adminStatus")
-    public BaseResponse<Boolean> adminStatus(Long id) {
+    public BaseResponse<Boolean> adminStatus(Long id, Integer type) {
         if (id <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        Boolean result = adminStatusImpl.updateUserStatus(id);
+        Boolean result = userService.updateUserStatusStrategy(id, type);
+
         return ResultUtils.success(result);
     }
 

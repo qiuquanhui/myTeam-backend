@@ -12,6 +12,8 @@ import com.hui.myteam.model.domain.User;
 import com.hui.myteam.model.request.UserRegisterRequest;
 import com.hui.myteam.model.vo.UserVO;
 import com.hui.myteam.service.UserService;
+import com.hui.myteam.service.impl.userStatusStrategy.AdminStatusImpl;
+import com.hui.myteam.service.impl.userStatusStrategy.UserStatusImpl;
 import com.hui.myteam.utils.AlgorithmUtils;
 import com.hui.myteam.utils.TencentCOSUtils;
 import javafx.util.Pair;
@@ -29,9 +31,11 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -50,7 +54,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     private UserMapper userMapper;
 
     @Resource
-    private RedisTemplate<String,String> stringRedisTemplate;
+    private RedisTemplate<String, String> stringRedisTemplate;
+
+    private Map<Integer, Function<Long, Boolean>> strategyMap = new HashMap<>();
+
+    @Resource
+    private UserStatusImpl userStatusImpl;
+
+    @Resource
+    private AdminStatusImpl adminStatusImpl;
+
+
+    @PostConstruct
+    public void strategyMapInit() {
+        strategyMap.put(1, id -> userStatusImpl.updateUserStatus(id));
+        strategyMap.put(2, id -> adminStatusImpl.updateUserStatus(id));
+    }
 
     /**
      * 盐值，混淆密码
@@ -238,8 +257,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         // todo 补充校验，如果用户没有传任何要更新的值，就直接报错，不用执行 update 语句
-        if (user == null){
-            throw new BusinessException(ErrorCode.PARAMS_ERROR,"没有转递参数");
+        if (user == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "没有转递参数");
         }
         // 如果是管理员，允许更新任意用户
         // 如果不是管理员，只允许更新当前（自己的）信息
@@ -339,8 +358,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         //校验tags是否为空
-        if (CollectionUtils.isEmpty(tags)){
-            throw new BusinessException(ErrorCode.PARAMS_ERROR,"标签数组为空");
+        if (CollectionUtils.isEmpty(tags)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "标签数组为空");
         }
         //将拿到的标签列表转换成 Json格式
         Gson gson = new Gson();
@@ -393,7 +412,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
         User loginUser = getLoginUser(request);
 
-        if (loginUser == null){
+        if (loginUser == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
 
@@ -423,6 +442,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
 
         return userVos;
+    }
+
+
+    @Override
+    public Boolean updateUserStatusStrategy(Long id, Integer type) {
+        Function<Long, Boolean> function = strategyMap.get(type);
+
+        if (function == null)
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR);
+
+        Boolean result = function.apply(id);
+        if (result == null)
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR);
+
+        return result;
     }
 
     /**

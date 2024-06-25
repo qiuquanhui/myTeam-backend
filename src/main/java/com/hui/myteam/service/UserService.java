@@ -108,4 +108,6 @@ public interface UserService extends IService<User> {
     int updateImg(User user, User loginUser, MultipartFile file);
 
     List<UserVO> searchNearUser(Integer radius, HttpServletRequest request);
+
+    Boolean updateUserStatusStrategy(Long id, Integer type);
 }
