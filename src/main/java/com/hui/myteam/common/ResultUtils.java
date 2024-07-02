@@ -29,6 +29,10 @@ public class ResultUtils {
         return new BaseResponse<>(errorCode);
     }
 
+    public static BaseResponse error(int Code, String description) {
+        return new BaseResponse(Code , description);
+    }
+
 
     /**
      * 失败
