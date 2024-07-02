@@ -1,10 +1,12 @@
 package com.hui.myteam.controller;
 
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hui.myteam.common.BaseResponse;
 import com.hui.myteam.common.ErrorCode;
 import com.hui.myteam.common.ResultUtils;
+import com.hui.myteam.constant.RedisConstant;
 import com.hui.myteam.exception.BusinessException;
 import com.hui.myteam.model.domain.User;
 import com.hui.myteam.model.request.UserLoginRequest;
@@ -119,6 +121,57 @@ public class UserController {
         }
         return ResultUtils.success(currentUser);
     }
+
+    /**
+     * getById
+     *
+     * @return
+     * @Param
+     */
+    @GetMapping("/getById/{id}")
+    public BaseResponse<User> getUserById(@PathVariable("id") Long id) {
+
+        //用于解决缓存雪崩问题
+        long minValue = 20L;
+        long maxValue = 50L;
+
+        long randomNumber = minValue + new Random().nextLong() % (maxValue - minValue + 1L);
+
+        //校验
+        if (id == null || id < 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        // 1. 从缓存中查询用户缓存
+        String Key = RedisConstant.REDIS_USER_CATCH + id;
+        String value = stringRedisTemplate.opsForValue().get(Key);
+
+        // 2. 如果不为空且不为""就返回
+        if (StringUtils.isNotBlank(value)) {
+            //如果不为空就返回
+            User user = JSONUtil.toBean(value, User.class);
+            return ResultUtils.success(user);
+
+        }
+        //3.不为空且为""就返回错误信息
+        if (value != null) {
+            return ResultUtils.error(500001, "查询id不存在");
+        }
+
+        //4.为空且不为""查询数据库
+        User user = userService.getById(id);
+        //5.数据库也没有当前用户就直接缓存空值
+        if (user == null) {
+            //将数据写入redis
+            stringRedisTemplate.opsForValue().set(Key, "", RedisConstant.REDIS_NULL_TTL + randomNumber, TimeUnit.MINUTES);
+
+            return ResultUtils.error(500001, "该用户不存在");
+        }
+        //6.数据库有当前数据，缓存当前用户
+        stringRedisTemplate.opsForValue().set(Key, JSONUtil.toJsonStr(user), RedisConstant.REDIS_CATCH_TTL + randomNumber, TimeUnit.MINUTES);
+
+        return ResultUtils.success(user);
+
+}
 
     /**
      * 修改用户头像
@@ -257,8 +310,8 @@ public class UserController {
         if (yzm == null) {
             // 生成六位数验证码
             String authCode = String.valueOf(new Random().nextInt(899999) + 100000);
-            SendMailUtil.sendEmailCode(targetEmail,"你的验证码为:" + authCode + "(一分钟内有效)" );
-            stringRedisTemplate.opsForValue().set(targetEmail,authCode,1, TimeUnit.MINUTES);
+            SendMailUtil.sendEmailCode(targetEmail, "你的验证码为:" + authCode + "(一分钟内有效)");
+            stringRedisTemplate.opsForValue().set(targetEmail, authCode, 1, TimeUnit.MINUTES);
             return ResultUtils.success("短信发送成功");
         }
         // 随机生成六位数验证码

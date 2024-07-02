@@ -26,7 +26,7 @@ public interface UserConstant {
     int ADMIN_ROLE = 1;
 
     /**
-     * 管理员权限
+     * Redis-GEO-key
      */
     String REDIS_GEO_KEY = "user:key:geo";
 
