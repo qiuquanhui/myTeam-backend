@@ -28,6 +28,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 import static com.hui.myteam.constant.UserConstant.USER_LOGIN_STATE;
@@ -48,6 +49,8 @@ public class UserController {
 
     @Resource
     private RedisTemplate<String, String> stringRedisTemplate;
+
+    private final ReentrantLock lock = new ReentrantLock();
 
     @PostMapping("/register")
     public BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
@@ -123,21 +126,20 @@ public class UserController {
     }
 
     /**
-     * getById
+     * 获取个人用户信息
      *
      * @return
-     * @Param
+     * @Param   id
      */
     @GetMapping("/getById/{id}")
     public BaseResponse<User> getUserById(@PathVariable("id") Long id) {
 
-        //用于解决缓存雪崩问题
+        //随机时间：用于解决缓存雪崩问题
         long minValue = 20L;
         long maxValue = 50L;
-
         long randomNumber = minValue + new Random().nextLong() % (maxValue - minValue + 1L);
 
-        //校验
+        //校验参数是否正常
         if (id == null || id < 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -150,28 +152,36 @@ public class UserController {
             //如果不为空就返回
             User user = JSONUtil.toBean(value, User.class);
             return ResultUtils.success(user);
-
         }
-        //3.不为空且为""就返回错误信息
+        //3.不为空且为""就返回错误信息，是为了防止缓存穿透所以存储了空值""
         if (value != null) {
             return ResultUtils.error(500001, "查询id不存在");
         }
 
-        //4.为空且不为""查询数据库
-        User user = userService.getById(id);
-        //5.数据库也没有当前用户就直接缓存空值
-        if (user == null) {
-            //将数据写入redis
-            stringRedisTemplate.opsForValue().set(Key, "", RedisConstant.REDIS_NULL_TTL + randomNumber, TimeUnit.MINUTES);
-
-            return ResultUtils.error(500001, "该用户不存在");
+        //为空且不为""查询数据库
+        //4.1加入锁更新缓存
+        try {
+            //加锁
+            lock.lock();
+            //4.2 缓存更新
+            User user = userService.getById(id);
+            //5.数据库也没有当前用户就直接缓存空值
+            if (user == null) {
+                //将数据写入redis
+                stringRedisTemplate.opsForValue().set(Key, "", RedisConstant.REDIS_NULL_TTL + randomNumber, TimeUnit.MINUTES);
+                return ResultUtils.error(500001, "该用户不存在");
+            }
+            //6.数据库有当前数据，缓存当前用户
+            stringRedisTemplate.opsForValue().set(Key, JSONUtil.toJsonStr(user), RedisConstant.REDIS_CATCH_TTL + randomNumber, TimeUnit.MINUTES);
+            return ResultUtils.success(user);
+        } catch (Exception e) {
+            log.info(e.getMessage());
+        } finally {
+            lock.unlock();
         }
-        //6.数据库有当前数据，缓存当前用户
-        stringRedisTemplate.opsForValue().set(Key, JSONUtil.toJsonStr(user), RedisConstant.REDIS_CATCH_TTL + randomNumber, TimeUnit.MINUTES);
-
-        return ResultUtils.success(user);
-
-}
+        //7.返回错误信息
+        return ResultUtils.error(ErrorCode.SYSTEM_ERROR);
+    }
 
     /**
      * 修改用户头像
