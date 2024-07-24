@@ -13,6 +13,10 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * WebSocket 连接测试
+ * 思路：创建连接的时候，将用户名以及session存储起来，方便后面推送消息
+ * 1. 创建连接的时候，将用户名以及session存储起来，方便后面推送消息
+ * 2. 在发送信息的时候判断其发送状态，如果是私聊就出发私聊的方法， 如果是公聊就出发公聊的方法
+ * 3. 断开连接的时候，将用户名以及session从集合中移除
  */
 @Component
 @ServerEndpoint("/web-socket/{userName}")
@@ -37,6 +41,7 @@ public class WebSocketUtil {
 
     /**
      * 私聊：向指定客户端推送消息
+     * 如果接受者为空，我们就向发送者发送信息
      */
     public synchronized static void privateMessage(SocketMsg socketMsg) {
         //接收消息的用户
@@ -59,7 +64,7 @@ public class WebSocketUtil {
      * 群聊：公开聊天记录
      * @param userName 发送者的用户名称（当前用户）
      * @param message 发送的消息
-     * @param flag 用来标识 是否要将消息推送给 当前用户
+     * @param flag 用来标识 是否要将消息推送给当前用户
      */
     public synchronized static void publicMessage(String userName,String message,boolean flag) {
         for (WebSocketUtil item : webSocketSet) {
